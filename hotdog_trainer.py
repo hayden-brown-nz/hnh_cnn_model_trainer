@@ -4,7 +4,13 @@ import os
 import cv2
 import random
 import pickle
-import time
+import datetime as dt
+
+
+#
+# Credit to YouTube channel 'Sentdex' (https://www.youtube.com/channel/UCfzlCWGWYyIQ0aLC5w48gBQ)
+# For his video series on using Tensorflow for constructing convolutional neural networks.
+#
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -48,7 +54,7 @@ def create_training_data():
                                                              image_index / len(training_images) * 100),
                       end=" ")
 
-                img_array = cv2.imread(os.path.join(path, image))
+                img_array = cv2.imread(os.path.join(path, image), cv2.IMREAD_COLOR)
                 scaled_array = cv2.resize(img_array, (NOMINAL_IMG_SIZE_X, NOMINAL_IMG_SIZE_Y))
                 training_data.append([scaled_array, class_num])
                 image_index += 1
@@ -68,8 +74,7 @@ def create_training_data():
     print("Done. Found {} training images.".format(len(training_data)))
 
 
-def make_dir(file_path):
-    directory = os.path.dirname(file_path)
+def make_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -114,7 +119,10 @@ for dense_layer in dense_layers:
     for layer_size in layer_sizes:
         for conv_layer in conv_layers:
 
-            MODEL_NAME = "hotdogs-vs-other-cnn-{}-conv-{}-nodes-{}-dense-{}".format(conv_layer, layer_size, dense_layer, int(time.time()))
+            MODEL_NAME = "hotdogs-vs-other-cnn-{}-conv-{}-nodes-{}-dense-{}".format(conv_layer,
+                                                                                    layer_size,
+                                                                                    dense_layer,
+                                                                                    dt.datetime.now().strftime("%Y-%m-%d_%I%M%Shrs"))
             tensorboard = TensorBoard(log_dir='{}/{}'.format(LOGS_DIR, MODEL_NAME))
             print("Building model '{}'...".format(MODEL_NAME))
 
@@ -144,19 +152,3 @@ for dense_layer in dense_layers:
             model.fit(x, y, batch_size=32, epochs=epochs, validation_split=0.1, callbacks=[tensorboard])
             make_dir(MODELS_DIR)
             model.save("{}/{}{}".format(MODELS_DIR, MODEL_NAME, ".model"))
-
-# Show raw image
-# plt.imshow(img_array[:,:,[2,1,0]])
-# plt.imshow(scaled_array[:, :, [2, 1, 0]])
-# plt.title(image + " ({} x {})".format(img_array.shape[0], img_array.shape[1]))
-# plt.show()
-
-
-# Scale image
-# IMG_SIZE = 50
-
-# plt.imshow(new_array[:, :, [2, 1, 0]])
-# plt.show()
-
-
-
