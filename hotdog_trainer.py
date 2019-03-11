@@ -22,10 +22,10 @@ LOGS_DIR = "logs"
 MODELS_DIR = "models"
 
 CATEGORIES = ["hotdog", "other"]
-MAX_CATEGORY_TRAINING_IMAGES = 1000
+MAX_CATEGORY_TRAINING_IMAGES = 4485
 
-NOMINAL_IMG_SIZE_X = 50
-NOMINAL_IMG_SIZE_Y = 50
+NOMINAL_IMG_SIZE_X = 100
+NOMINAL_IMG_SIZE_Y = 100
 
 training_data = []
 
@@ -45,6 +45,7 @@ def create_training_data():
         training_images = all_category_images[:MAX_CATEGORY_TRAINING_IMAGES]
         image_index = 0
         bad_images = 0
+        bad_image_files = []
         print("Reading '{0}' images:".format(category))
 
         for image in training_images:
@@ -61,11 +62,13 @@ def create_training_data():
 
             except Exception:
                 bad_images += 1
+                bad_image_files.append(image)
                 pass
 
         if bad_images != 0:
-            print("(Warning: Encountered {} bad images)".format(bad_images))
-
+            print()
+            print("Warning: Encountered & ignored {} bad images:".format(bad_images))
+            print("\n".join(bad_image_files))
         print()
 
     # Shuffle the order of the training images to achieve better learning results
@@ -108,20 +111,21 @@ x = x / 255.0
 
 
 # Parameterised model constraints
-dense_layers = [0, 1, 2]
-layer_sizes = [32, 64, 128]
-conv_layers = [1, 2, 3]
+dense_layers = [1]
+layer_sizes = [64]
+conv_layers = [5]
 
-epochs = 10
+epochs = 15
 
 # Parameterised Tensorflow model builder
 for dense_layer in dense_layers:
     for layer_size in layer_sizes:
         for conv_layer in conv_layers:
 
-            MODEL_NAME = "hotdogs-vs-other-cnn-{}-conv-{}-nodes-{}-dense-{}".format(conv_layer,
+            MODEL_NAME = "hotdogs-vs-other-cnn-{}-conv-{}-nodes-{}-dense-{}-epochs-{}".format(conv_layer,
                                                                                     layer_size,
                                                                                     dense_layer,
+                                                                                    epochs,
                                                                                     dt.datetime.now().strftime("%Y-%m-%d_%I%M%Shrs"))
             tensorboard = TensorBoard(log_dir='{}/{}'.format(LOGS_DIR, MODEL_NAME))
             print("Building model '{}'...".format(MODEL_NAME))
@@ -151,4 +155,14 @@ for dense_layer in dense_layers:
             model.compile(loss="binary_crossentropy", optimizer="adam", metrics=['accuracy'])
             model.fit(x, y, batch_size=32, epochs=epochs, validation_split=0.1, callbacks=[tensorboard])
             make_dir(MODELS_DIR)
-            model.save("{}/{}{}".format(MODELS_DIR, MODEL_NAME, ".model"))
+
+            model_filename = "{}/{}{}".format(MODELS_DIR, MODEL_NAME, ".model")
+            tflite_filename = "{}/{}{}".format(MODELS_DIR, MODEL_NAME, ".tflite")
+
+            #model.save(model_filename)
+            tf.keras.models.save_model(model, model_filename)
+
+            # Convert to TensorFlow Lite model.
+            converter = tf.lite.TFLiteConverter.from_keras_model_file(model_filename)
+            tflite_model = converter.convert()
+            open(tflite_filename, "wb").write(tflite_model)

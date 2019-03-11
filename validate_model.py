@@ -5,8 +5,8 @@ import tensorflow as tf
 
 CATEGORIES = ["hotdog", "other"]
 
-NOMINAL_IMG_SIZE_X = 50
-NOMINAL_IMG_SIZE_Y = 50
+NOMINAL_IMG_SIZE_X = 100
+NOMINAL_IMG_SIZE_Y = 100
 
 IMAGES_DIR = "images"
 LOGS_DIR = "logs"
@@ -15,7 +15,7 @@ MODELS_DIR = "models"
 
 # Convolutional Neural Network Model file (Tensorflow keras model)
 CNN_MODEL = 'default.model'
-TEST_IMAGE = 'test_hotdog.jpg'
+TEST_IMAGE = 'test_images/test_hotdog.jpg'
 
 
 def prepare(filepath):
